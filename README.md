@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# MewShop - Modern E-commerce & Tools Platform
 
-## Getting Started
+A modern, responsive Next.js website featuring a comprehensive navbar, beautiful homepage, and SEO-optimized structure ready for Django API integration.
 
-First, run the development server:
+## 🚀 Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### ✨ Modern Navbar
+- **Responsive Design**: Works perfectly on desktop, tablet, and mobile
+- **MewShop Logo**: Custom gradient logo with hover effects
+- **Smart Search Bar**: Full-width search with focus animations
+- **Navigation Menu**: Home, Products, Blog, Tools, Finance Tools, About
+- **Dark Mode Toggle**: Persistent theme switching with smooth transitions
+- **Authentication**: Login/Signup buttons + user profile dropdown when logged in
+- **Mobile Menu**: Collapsible hamburger menu with smooth animations
+- **SEO Friendly**: Semantic HTML structure and proper meta tags
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 🏠 Homepage Components
+- **Hero Section**: Gradient background with animated blobs and compelling CTA buttons
+- **Featured Sections**: Four main service areas with icons and hover effects
+- **Statistics**: User count, products, tools display
+- **Newsletter Signup**: Email subscription form with gradient styling
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### 🎨 Design & UX
+- **Tailwind CSS**: Utility-first styling with custom animations
+- **Dark Mode**: Complete dark/light theme support
+- **Smooth Transitions**: All interactions have smooth hover/focus effects
+- **Accessibility**: Proper focus states, ARIA labels, semantic HTML
+- **Performance**: Optimized images, fonts, and animations
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ Tech Stack
 
-## Learn More
+- **Next.js 15.4.2** - React framework with App Router
+- **React 19.1.0** - Latest React with modern hooks
+- **Tailwind CSS 4** - Utility-first CSS framework
+- **Heroicons** - Beautiful SVG icons
 
-To learn more about Next.js, take a look at the following resources:
+## 🔧 Quick Start
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Install Dependencies**
+   ```bash
+   npm install
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. **Start Development Server**
+   ```bash
+   npm run dev
+   ```
 
-## Deploy on Vercel
+3. **Open Browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🔗 Django API Integration Points
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The following components are ready for your Django API integration:
+
+### Authentication
+- `components/Navbar.js` - Login state management
+- `app/login/page.js` - Login form
+- `app/signup/page.js` - Registration form
+
+### Content Pages
+- `app/products/page.js` - Product listings and details
+- `app/blog/page.js` - Blog posts and articles
+- `app/tools/page.js` - Tool listings
+- `app/finance-tools/page.js` - Financial calculators
+- `app/search/page.js` - Search functionality
+
+---
+
+**Built with ❤️ for modern e-commerce and productivity tools**
