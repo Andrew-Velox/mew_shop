@@ -25,9 +25,8 @@ export default function Hero() {
   const paragraphRef = useRef(null)
   const badgeRef = useRef(null)
   const buttonsRef = useRef(null)
-  const backgroundOrbsRef = useRef([])
-  const particlesRef = useRef([])
   const gridRef = useRef(null)
+  const waveRef = useRef(null)
 
   // Format number for display
   const formatNumber = (num, suffix) => {
@@ -93,36 +92,6 @@ export default function Hero() {
         y: 50
       })
 
-      // Background orbs floating animation
-      backgroundOrbsRef.current.forEach((orb, index) => {
-        if (orb) {
-          gsap.to(orb, {
-            y: -30,
-            x: index % 2 === 0 ? 20 : -20,
-            rotation: 360,
-            duration: 8 + index * 2,
-            repeat: -1,
-            yoyo: true,
-            ease: "power2.inOut"
-          })
-        }
-      })
-
-      // Particles animation
-      particlesRef.current.forEach((particle, index) => {
-        if (particle) {
-          gsap.to(particle, {
-            y: -40,
-            x: index % 2 === 0 ? 30 : -30,
-            rotation: index % 2 === 0 ? 180 : -180,
-            duration: 6 + index * 1.5,
-            repeat: -1,
-            yoyo: true,
-            ease: "sine.inOut"
-          })
-        }
-      })
-
       // Main content entrance animation
       const tl = gsap.timeline()
       
@@ -160,18 +129,6 @@ export default function Hero() {
         onUpdate: (self) => {
           const progress = self.progress
           
-          // Parallax background orbs
-          backgroundOrbsRef.current.forEach((orb, index) => {
-            if (orb) {
-              gsap.to(orb, {
-                y: -progress * 200 * (index + 1),
-                rotation: progress * 360,
-                duration: 0.3,
-                ease: "none"
-              })
-            }
-          })
-
           // Fade and scale main content
           gsap.to([titleRef.current, paragraphRef.current], {
             opacity: 1 - progress * 1.5,
@@ -198,24 +155,22 @@ export default function Hero() {
         const x = (e.clientX - rect.left - rect.width / 2) / rect.width
         const y = (e.clientY - rect.top - rect.height / 2) / rect.height
 
-        // Subtle parallax for background elements
-        backgroundOrbsRef.current.forEach((orb, index) => {
-          if (orb) {
-            gsap.to(orb, {
-              x: x * (20 + index * 5),
-              y: y * (15 + index * 5),
-              duration: 1,
-              ease: "power2.out"
-            })
-          }
-        })
-
         // Grid movement
         if (gridRef.current) {
           gsap.to(gridRef.current, {
             x: x * 10,
             y: y * 10,
             duration: 0.8,
+            ease: "power2.out"
+          })
+        }
+
+        // Wave distortion effect
+        if (waveRef.current) {
+          gsap.to(waveRef.current, {
+            rotationX: y * 5,
+            rotationY: x * 5,
+            duration: 1,
             ease: "power2.out"
           })
         }
@@ -271,78 +226,93 @@ export default function Hero() {
         className="absolute inset-0 grid-background opacity-30"
       />
       
-      {/* Animated Background Orbs */}
-      <div className="absolute inset-0">
-        <div 
-          ref={(el) => {
-            if (el && !backgroundOrbsRef.current.includes(el)) {
-              backgroundOrbsRef.current[0] = el
-            }
-          }}
-          className="absolute top-20 left-20 w-64 h-64 bg-green-400/20 rounded-full blur-3xl"
-        />
-        <div 
-          ref={(el) => {
-            if (el && !backgroundOrbsRef.current.includes(el)) {
-              backgroundOrbsRef.current[1] = el
-            }
-          }}
-          className="absolute top-40 right-32 w-80 h-80 bg-blue-400/15 rounded-full blur-3xl"
-        />
-        <div 
-          ref={(el) => {
-            if (el && !backgroundOrbsRef.current.includes(el)) {
-              backgroundOrbsRef.current[2] = el
-            }
-          }}
-          className="absolute bottom-32 left-40 w-72 h-72 bg-emerald-400/20 rounded-full blur-3xl"
-        />
-        <div 
-          ref={(el) => {
-            if (el && !backgroundOrbsRef.current.includes(el)) {
-              backgroundOrbsRef.current[3] = el
-            }
-          }}
-          className="absolute bottom-20 right-20 w-56 h-56 bg-teal-400/25 rounded-full blur-3xl"
-        />
+      {/* Animated Wave Background - Green Theme */}
+      <div 
+        ref={waveRef}
+        className="absolute inset-0 overflow-hidden"
+      >
+        {/* Wave Layer 1 */}
+        <div className="absolute inset-0 wave-animation wave-layer-1">
+          <svg className="absolute bottom-0 left-0 w-full h-full" viewBox="0 0 1200 600" preserveAspectRatio="none">
+            <path d="M0,300 Q300,200 600,300 T1200,300 L1200,600 L0,600 Z" 
+                  fill="url(#waveGradient1)" 
+                  opacity="0.15">
+              <animate attributeName="d" 
+                       dur="8s" 
+                       repeatCount="indefinite"
+                       values="M0,300 Q300,200 600,300 T1200,300 L1200,600 L0,600 Z;
+                               M0,320 Q300,220 600,320 T1200,320 L1200,600 L0,600 Z;
+                               M0,280 Q300,180 600,280 T1200,280 L1200,600 L0,600 Z;
+                               M0,300 Q300,200 600,300 T1200,300 L1200,600 L0,600 Z"/>
+            </path>
+          </svg>
+        </div>
+        
+        {/* Wave Layer 2 */}
+        <div className="absolute inset-0 wave-animation wave-layer-2">
+          <svg className="absolute bottom-0 left-0 w-full h-full" viewBox="0 0 1200 600" preserveAspectRatio="none">
+            <path d="M0,350 Q300,250 600,350 T1200,350 L1200,600 L0,600 Z" 
+                  fill="url(#waveGradient2)" 
+                  opacity="0.1">
+              <animate attributeName="d" 
+                       dur="12s" 
+                       repeatCount="indefinite"
+                       values="M0,350 Q300,250 600,350 T1200,350 L1200,600 L0,600 Z;
+                               M0,330 Q300,230 600,330 T1200,330 L1200,600 L0,600 Z;
+                               M0,370 Q300,270 600,370 T1200,370 L1200,600 L0,600 Z;
+                               M0,350 Q300,250 600,350 T1200,350 L1200,600 L0,600 Z"/>
+            </path>
+          </svg>
+        </div>
+        
+        {/* Wave Layer 3 */}
+        <div className="absolute inset-0 wave-animation wave-layer-3">
+          <svg className="absolute bottom-0 left-0 w-full h-full" viewBox="0 0 1200 600" preserveAspectRatio="none">
+            <path d="M0,400 Q300,300 600,400 T1200,400 L1200,600 L0,600 Z" 
+                  fill="url(#waveGradient3)" 
+                  opacity="0.08">
+              <animate attributeName="d" 
+                       dur="15s" 
+                       repeatCount="indefinite"
+                       values="M0,400 Q300,300 600,400 T1200,400 L1200,600 L0,600 Z;
+                               M0,420 Q300,320 600,420 T1200,420 L1200,600 L0,600 Z;
+                               M0,380 Q300,280 600,380 T1200,380 L1200,600 L0,600 Z;
+                               M0,400 Q300,300 600,400 T1200,400 L1200,600 L0,600 Z"/>
+            </path>
+          </svg>
+        </div>
+        
+        {/* Wave Gradients */}
+        <svg width="0" height="0">
+          <defs>
+            <linearGradient id="waveGradient1" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#10b981" stopOpacity="0.4"/>
+              <stop offset="50%" stopColor="#22c55e" stopOpacity="0.3"/>
+              <stop offset="100%" stopColor="#34d399" stopOpacity="0.2"/>
+            </linearGradient>
+            <linearGradient id="waveGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#059669" stopOpacity="0.3"/>
+              <stop offset="50%" stopColor="#10b981" stopOpacity="0.2"/>
+              <stop offset="100%" stopColor="#6ee7b7" stopOpacity="0.1"/>
+            </linearGradient>
+            <linearGradient id="waveGradient3" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#047857" stopOpacity="0.25"/>
+              <stop offset="50%" stopColor="#059669" stopOpacity="0.15"/>
+              <stop offset="100%" stopColor="#a7f3d0" stopOpacity="0.05"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        
+        {/* Floating particles on waves */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="wave-particle wave-particle-1"></div>
+          <div className="wave-particle wave-particle-2"></div>
+          <div className="wave-particle wave-particle-3"></div>
+          <div className="wave-particle wave-particle-4"></div>
+          <div className="wave-particle wave-particle-5"></div>
+        </div>
       </div>
-
-      {/* Floating Particles */}
-      <div className="absolute inset-0">
-        <div 
-          ref={(el) => {
-            if (el && !particlesRef.current.includes(el)) {
-              particlesRef.current[0] = el
-            }
-          }}
-          className="absolute top-32 left-1/4 w-2 h-2 bg-green-400/60 rounded-full"
-        />
-        <div 
-          ref={(el) => {
-            if (el && !particlesRef.current.includes(el)) {
-              particlesRef.current[1] = el
-            }
-          }}
-          className="absolute top-48 right-1/3 w-1 h-1 bg-emerald-500/70 rounded-full"
-        />
-        <div 
-          ref={(el) => {
-            if (el && !particlesRef.current.includes(el)) {
-              particlesRef.current[2] = el
-            }
-          }}
-          className="absolute bottom-40 left-1/3 w-1.5 h-1.5 bg-teal-400/50 rounded-full"
-        />
-        <div 
-          ref={(el) => {
-            if (el && !particlesRef.current.includes(el)) {
-              particlesRef.current[3] = el
-            }
-          }}
-          className="absolute bottom-60 right-1/4 w-2 h-2 bg-green-300/40 rounded-full"
-        />
-      </div>
-
+      
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col justify-center min-h-screen py-16">
         <div className="text-center">
           <h1 
@@ -677,5 +647,160 @@ export const heroStyles = `
   
   .animation-delay-3000 {
     animation-delay: 3s;
+  }
+  
+  /* Wave Animation Styles */
+  .wave-animation {
+    will-change: transform;
+  }
+  
+  .wave-layer-1 {
+    animation: waveFloat1 10s ease-in-out infinite;
+  }
+  
+  .wave-layer-2 {
+    animation: waveFloat2 14s ease-in-out infinite;
+    animation-delay: -2s;
+  }
+  
+  .wave-layer-3 {
+    animation: waveFloat3 18s ease-in-out infinite;
+    animation-delay: -4s;
+  }
+  
+  @keyframes waveFloat1 {
+    0%, 100% {
+      transform: translateX(0%) scaleY(1);
+    }
+    50% {
+      transform: translateX(-10%) scaleY(1.1);
+    }
+  }
+  
+  @keyframes waveFloat2 {
+    0%, 100% {
+      transform: translateX(0%) scaleY(1) rotateZ(0deg);
+    }
+    33% {
+      transform: translateX(5%) scaleY(0.9) rotateZ(0.5deg);
+    }
+    66% {
+      transform: translateX(-5%) scaleY(1.1) rotateZ(-0.5deg);
+    }
+  }
+  
+  @keyframes waveFloat3 {
+    0%, 100% {
+      transform: translateX(0%) scaleY(1);
+    }
+    25% {
+      transform: translateX(-8%) scaleY(1.05);
+    }
+    75% {
+      transform: translateX(8%) scaleY(0.95);
+    }
+  }
+  
+  /* Floating particles on waves */
+  .wave-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: radial-gradient(circle, rgba(34, 197, 94, 0.8) 0%, rgba(16, 185, 129, 0.4) 100%);
+    border-radius: 50%;
+    opacity: 0.6;
+    pointer-events: none;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+  }
+  
+  .wave-particle-1 {
+    top: 60%;
+    left: 10%;
+    animation: floatParticle1 8s ease-in-out infinite;
+  }
+  
+  .wave-particle-2 {
+    top: 70%;
+    left: 25%;
+    animation: floatParticle2 12s ease-in-out infinite;
+    animation-delay: -2s;
+  }
+  
+  .wave-particle-3 {
+    top: 65%;
+    left: 60%;
+    animation: floatParticle3 10s ease-in-out infinite;
+    animation-delay: -4s;
+  }
+  
+  .wave-particle-4 {
+    top: 75%;
+    left: 80%;
+    animation: floatParticle1 14s ease-in-out infinite;
+    animation-delay: -6s;
+  }
+  
+  .wave-particle-5 {
+    top: 68%;
+    left: 45%;
+    animation: floatParticle2 9s ease-in-out infinite;
+    animation-delay: -3s;
+  }
+  
+  @keyframes floatParticle1 {
+    0%, 100% {
+      transform: translateY(0px) translateX(0px) scale(1);
+      opacity: 0.6;
+    }
+    25% {
+      transform: translateY(-15px) translateX(10px) scale(1.2);
+      opacity: 0.8;
+    }
+    50% {
+      transform: translateY(-8px) translateX(-5px) scale(1.1);
+      opacity: 0.4;
+    }
+    75% {
+      transform: translateY(-20px) translateX(15px) scale(0.9);
+      opacity: 0.7;
+    }
+  }
+  
+  @keyframes floatParticle2 {
+    0%, 100% {
+      transform: translateY(0px) translateX(0px) scale(1) rotate(0deg);
+      opacity: 0.5;
+    }
+    33% {
+      transform: translateY(-12px) translateX(-8px) scale(1.3) rotate(120deg);
+      opacity: 0.9;
+    }
+    66% {
+      transform: translateY(-18px) translateX(12px) scale(0.8) rotate(240deg);
+      opacity: 0.3;
+    }
+  }
+  
+  @keyframes floatParticle3 {
+    0%, 100% {
+      transform: translateY(0px) translateX(0px) scale(1);
+      opacity: 0.7;
+    }
+    50% {
+      transform: translateY(-25px) translateX(-10px) scale(1.4);
+      opacity: 0.2;
+    }
+  }
+  
+  /* Responsive wave animations */
+  @media (max-width: 768px) {
+    .wave-animation svg {
+      height: 300px;
+    }
+    
+    .wave-particle {
+      width: 3px;
+      height: 3px;
+    }
   }
 `
