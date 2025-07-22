@@ -148,3 +148,24 @@ html.dark body {
     radial-gradient(circle at 1px 1px, rgba(34, 197, 94, 0.15) 1px, transparent 0);
   background-size: 20px 20px;
 }
+
+/* Background animation keyframes for animated background */
+@keyframes backgroundShift {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(30px, -20px);
+  }
+  50% {
+    transform: translate(-20px, 40px);
+  }
+  75% {
+    transform: translate(40px, -30px);
+  }
+}
+
+/* Radial gradient utility for ambient lighting */
+.bg-gradient-radial {
+  background-image: radial-gradient(var(--tw-gradient-stops));
+}

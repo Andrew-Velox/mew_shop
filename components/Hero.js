@@ -263,7 +263,7 @@ export default function Hero() {
   return (
     <section 
       ref={heroRef}
-      className="min-h-screen relative overflow-hidden bg-gradient-to-br from-green-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900"
+      className="min-h-screen relative overflow-hidden bg-gradient-to-br from-green-50/50 via-white/70 to-green-50/50 dark:from-gray-900/80 dark:via-gray-800/80 dark:to-gray-900/80 backdrop-blur-sm"
     >
       {/* Background Grid */}
       <div 
