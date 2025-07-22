@@ -34,7 +34,7 @@ export default function Tools() {
       if (validItems.length > 0) {
         gsap.set(validItems, (index) => ({
           y: 150, 
-          x: index % 2 === 0 ? -100 : 100,
+          x: index % 2 === 0 ? -30 : 30, // Reduced horizontal movement
           opacity: 0, 
           scale: 0.5, 
           rotationY: index % 2 === 0 ? -45 : 45
@@ -65,7 +65,7 @@ export default function Tools() {
       ScrollTrigger.batch(featuresRef.current, {
         onEnter: (elements) => {
           gsap.fromTo(elements, 
-            { x: -100, opacity: 0, rotation: -5 },
+            { x: -30, opacity: 0, rotation: -5 }, // Reduced horizontal movement
             { 
               x: 0, 
               opacity: 1, 
@@ -283,7 +283,7 @@ export default function Tools() {
   return (
     <div 
       ref={containerRef}
-      className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900"
+      className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 overflow-x-hidden"
     >
       {/* Header */}
       <div 

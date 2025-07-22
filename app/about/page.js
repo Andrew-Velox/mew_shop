@@ -84,7 +84,7 @@ export default function About() {
   return (
     <div 
       ref={containerRef}
-      className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 dark:from-gray-900 dark:via-gray-800 dark:to-green-900"
+      className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 dark:from-gray-900 dark:via-gray-800 dark:to-green-900 overflow-x-hidden"
     >
       {/* Header */}
       <div 
