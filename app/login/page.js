@@ -195,10 +195,10 @@ export default function Login() {
           window.dispatchEvent(new Event('authStateChanged'))
           
           console.log('=== REDIRECTING IN 1.5 SECONDS ===')
-          // Redirect to dashboard or home page
+          // Redirect to profile page
           setTimeout(() => {
             console.log('=== EXECUTING REDIRECT ===')
-            router.push('/')
+            router.push('/profile')
           }, 1500)
         } else {
           console.log('=== NO TOKEN OR USER IN RESPONSE ===')

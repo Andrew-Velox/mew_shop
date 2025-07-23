@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server'
+import { getApiUrls, API_ENDPOINTS } from '../../../../config/api.js'
 
 export async function POST(request) {
   try {
     // Get the request body
     const body = await request.json()
     
-    // Try production first, fallback to local if needed
-    const API_URLS = [
-      'https://shopdrf-production.up.railway.app/users/register/',
-      'http://127.0.0.1:8000/users/register/'
-    ]
+    // Get API URLs with fallback
+    const API_URLS = getApiUrls(API_ENDPOINTS.REGISTER)
     
     let djangoResponse
     let lastError
