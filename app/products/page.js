@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
 import Link from 'next/link'
@@ -15,6 +15,11 @@ export default function Products() {
   const searchRef = useRef(null)
   const categoriesRef = useRef([])
   const productsRef = useRef([])
+
+  // State for categories
+  const [categories, setCategories] = useState([])
+  const [categoriesLoading, setCategoriesLoading] = useState(true)
+  const [categoriesError, setCategoriesError] = useState(null)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -68,13 +73,72 @@ export default function Products() {
     return () => ctx.revert()
   }, [])
 
-  const categories = [
-    { name: 'All Products', icon: '🛍️', count: '500+' },
-    { name: 'Electronics', icon: '📱', count: '150+' },
-    { name: 'Home & Garden', icon: '🏡', count: '120+' },
-    { name: 'Fashion', icon: '👕', count: '90+' },
-    { name: 'Books', icon: '📚', count: '140+' }
-  ]
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setCategoriesLoading(true)
+        setCategoriesError(null)
+        
+        console.log('Fetching categories for products page...')
+        const response = await fetch('/api/categories')
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch categories: ${response.status}`)
+        }
+        
+        const data = await response.json()
+        console.log('Categories fetched for products page:', data)
+        
+        if (Array.isArray(data)) {
+          // Add "All Products" as first category
+          const allProductsCategory = {
+            id: 0,
+            name: 'All Products',
+            slug: 'all',
+            image: null
+          }
+          setCategories([allProductsCategory, ...data])
+        } else {
+          throw new Error('Invalid categories data format')
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+        setCategoriesError(error.message)
+        // Fallback to empty array on error
+        setCategories([])
+      } finally {
+        setCategoriesLoading(false)
+      }
+    }
+
+    fetchCategories()
+  }, [])
+
+  // Function to get category icon based on name
+  const getCategoryIcon = (categoryName) => {
+    if (categoryName === 'All Products') return '🛍️'
+    
+    const name = categoryName.toLowerCase()
+    if (name.includes('food') || name.includes('restaurant') || name.includes('dining')) return '🍽️'
+    if (name.includes('electronics') || name.includes('tech') || name.includes('gadget')) return '⚡'
+    if (name.includes('fashion') || name.includes('clothing') || name.includes('apparel')) return '👕'
+    if (name.includes('home') || name.includes('garden') || name.includes('house')) return '🏠'
+    if (name.includes('fitness') || name.includes('sport') || name.includes('gym')) return '💪'
+    if (name.includes('book') || name.includes('education') || name.includes('learning')) return '📚'
+    if (name.includes('beauty') || name.includes('cosmetic') || name.includes('skincare')) return '💄'
+    if (name.includes('toy') || name.includes('game') || name.includes('kid')) return '🎮'
+    if (name.includes('auto') || name.includes('car') || name.includes('vehicle')) return '🚗'
+    if (name.includes('health') || name.includes('medical') || name.includes('pharmacy')) return '⚕️'
+    if (name.includes('pet') || name.includes('animal')) return '🐾'
+    if (name.includes('travel') || name.includes('vacation') || name.includes('trip')) return '✈️'
+    if (name.includes('music') || name.includes('instrument') || name.includes('audio')) return '🎵'
+    if (name.includes('art') || name.includes('craft') || name.includes('creative')) return '🎨'
+    // Default icon
+    return '🏷️'
+  }
+
+  // Categories will be fetched from API
 
   const featuredProducts = [
     { 
@@ -169,28 +233,89 @@ export default function Products() {
         </div>
 
         {/* Categories */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">
-          {categories.map((category, index) => (
-            <button
-              key={category.name}
-              ref={(el) => {
-                if (el && !categoriesRef.current.includes(el)) {
-                  categoriesRef.current[index] = el
-                }
-              }}
-              className="bg-white dark:bg-gray-800 rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-green-100 dark:border-gray-700 group"
-            >
-              <div className="text-3xl mb-2 group-hover:scale-110 transition-transform duration-300">
-                {category.icon}
+        <div className="mb-12">
+          {/* Loading State */}
+          {categoriesLoading && (
+            <div className="flex justify-center items-center py-8">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-gray-600 dark:text-gray-400">Loading categories...</span>
               </div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                {category.name}
-              </h3>
-              <p className="text-sm text-green-600 dark:text-green-400">
-                {category.count}
-              </p>
-            </button>
-          ))}
+            </div>
+          )}
+          
+          {/* Error State */}
+          {categoriesError && (
+            <div className="flex justify-center items-center py-8">
+              <div className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-6 py-4 rounded-lg border border-red-200 dark:border-red-800">
+                <div className="flex items-center gap-2">
+                  <span>❌</span>
+                  <span>Failed to load categories: {categoriesError}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Categories Grid */}
+          {!categoriesLoading && !categoriesError && categories.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+              {categories.map((category, index) => (
+                <button
+                  key={category.id || category.name}
+                  ref={(el) => {
+                    if (el && !categoriesRef.current.includes(el)) {
+                      categoriesRef.current[index] = el
+                    }
+                  }}
+                  className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 text-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-green-100 dark:border-gray-700 group"
+                >
+                  <div className="mb-3">
+                    {category.image ? (
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto group-hover:scale-110 transition-transform duration-300">
+                        <img
+                          src={category.image}
+                          alt={category.name}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            // Fallback to emoji icon if image fails to load
+                            e.target.style.display = 'none'
+                            e.target.nextSibling.style.display = 'flex'
+                          }}
+                        />
+                        {/* Fallback emoji icon */}
+                        <div 
+                          className="w-full h-full flex items-center justify-center text-2xl sm:text-3xl"
+                          style={{ display: 'none' }}
+                        >
+                          {getCategoryIcon(category.name)}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-2xl sm:text-3xl group-hover:scale-110 transition-transform duration-300">
+                        {getCategoryIcon(category.name)}
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1 text-sm sm:text-base">
+                    {category.name}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-green-600 dark:text-green-400">
+                    {category.name === 'All Products' ? 'View All' : 'Filter'}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+          
+          {/* Empty State */}
+          {!categoriesLoading && !categoriesError && categories.length === 0 && (
+            <div className="flex justify-center items-center py-8">
+              <div className="text-center">
+                <div className="text-4xl mb-4 opacity-50">📂</div>
+                <p className="text-gray-600 dark:text-gray-400">No categories available</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Products Grid */}
