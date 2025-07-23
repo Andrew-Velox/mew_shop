@@ -208,3 +208,17 @@ html.dark body {
 .bg-gradient-radial {
   background-image: radial-gradient(var(--tw-gradient-stops));
 }
+
+/* Shimmer animation for loading images */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}

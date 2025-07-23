@@ -24,6 +24,11 @@ export default function FeaturedSections() {
   const [categoriesLoading, setCategoriesLoading] = useState(true)
   const [categoriesError, setCategoriesError] = useState(null)
 
+  // State for products
+  const [products, setProducts] = useState([])
+  const [productsLoading, setProductsLoading] = useState(true)
+  const [productsError, setProductsError] = useState(null)
+
   useEffect(() => {
     const ctx = gsap.context(() => {
       // Set initial states
@@ -274,6 +279,48 @@ export default function FeaturedSections() {
     fetchCategories()
   }, [])
 
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setProductsLoading(true)
+        setProductsError(null)
+        
+        console.log('Fetching products...')
+        const response = await fetch('/api/products')
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch products: ${response.status}`)
+        }
+        
+        const data = await response.json()
+        console.log('Products fetched:', data)
+        
+        if (Array.isArray(data)) {
+          // Get only featured products or first 6 products
+          const featuredProducts = data.filter(product => product.featured).slice(0, 6)
+          if (featuredProducts.length === 0) {
+            // If no featured products, get first 6
+            setProducts(data.slice(0, 6))
+          } else {
+            setProducts(featuredProducts)
+          }
+        } else {
+          throw new Error('Invalid products data format')
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error)
+        setProductsError(error.message)
+        // Fallback to empty array on error
+        setProducts([])
+      } finally {
+        setProductsLoading(false)
+      }
+    }
+
+    fetchProducts()
+  }, [])
+
   // Function to get category icon based on name
   const getCategoryIcon = (categoryName) => {
     const name = categoryName.toLowerCase()
@@ -295,69 +342,13 @@ export default function FeaturedSections() {
     return '🏷️'
   }
 
-  // Sample eco-friendly products (will be replaced with API data later)
-  const sampleProducts = [
-    {
-      id: 1,
-      name: 'Bamboo Water Bottle',
-      price: '$24.99',
-      originalPrice: '$34.99',
-      image: '/placeholder-product.jpg',
-      category: 'Sustainable Living',
-      ecoRating: 5,
-      description: 'BPA-free bamboo water bottle with stainless steel interior'
-    },
-    {
-      id: 2,
-      name: 'Solar Power Bank',
-      price: '$49.99',
-      originalPrice: '$69.99',
-      image: '/placeholder-product.jpg',
-      category: 'Electronics',
-      ecoRating: 4,
-      description: '20,000mAh solar-powered portable charger'
-    },
-    {
-      id: 3,
-      name: 'Organic Cotton T-Shirt',
-      price: '$29.99',
-      originalPrice: '$39.99',
-      image: '/placeholder-product.jpg',
-      category: 'Fashion',
-      ecoRating: 5,
-      description: '100% organic cotton, fair trade certified'
-    },
-    {
-      id: 4,
-      name: 'Biodegradable Phone Case',
-      price: '$19.99',
-      originalPrice: '$29.99',
-      image: '/placeholder-product.jpg',
-      category: 'Tech Accessories',
-      ecoRating: 5,
-      description: 'Plant-based materials, fully compostable'
-    },
-    {
-      id: 5,
-      name: 'LED Plant Grow Light',
-      price: '$89.99',
-      originalPrice: '$119.99',
-      image: '/placeholder-product.jpg',
-      category: 'Home & Garden',
-      ecoRating: 4,
-      description: 'Energy-efficient LED grow light for indoor plants'
-    },
-    {
-      id: 6,
-      name: 'Recycled Yoga Mat',
-      price: '$39.99',
-      originalPrice: '$59.99',
-      image: '/placeholder-product.jpg',
-      category: 'Fitness',
-      ecoRating: 5,
-      description: 'Made from recycled materials, non-toxic'
-    }
-  ]
+  // Products will be fetched from API
+
+  // Function to get category name by ID
+  const getCategoryName = (categoryId) => {
+    const category = categories.find(cat => cat.id === categoryId)
+    return category ? category.name : 'Other'
+  }
 
   // Categories will be fetched from API
 
@@ -560,72 +551,111 @@ export default function FeaturedSections() {
           </div>
 
           {/* Products Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-16">
-            {sampleProducts.map((product, index) => (
-              <div
-                key={product.id}
-                ref={el => productsRef.current[index] = el}
-                className="group bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-200 dark:border-gray-700 cursor-pointer transform-gpu"
-              >
-                {/* Product Image */}
-                <div className="relative h-48 sm:h-56 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 overflow-hidden">
-                  <div className="absolute inset-0 flex items-center justify-center text-6xl sm:text-7xl opacity-20">
-                    📦
-                  </div>
-                  <div className="absolute top-4 left-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-medium">
-                    ECO
-                  </div>
-                  <div className="absolute top-4 right-4">
-                    {renderEcoRating(product.ecoRating)}
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-green-400 to-blue-400"></div>
+          <div className="mb-16">
+            {/* Loading State */}
+            {productsLoading && (
+              <div className="flex justify-center items-center py-12">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-gray-600 dark:text-gray-400">Loading products...</span>
                 </div>
-
-                {/* Product Content */}
-                <div className="p-6">
-                  <div className="mb-3">
-                    <span className="inline-block bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-lg text-xs font-medium">
-                      {product.category}
-                    </span>
-                  </div>
-                  
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-300">
-                    {product.name}
-                  </h3>
-                  
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
-                    {product.description}
-                  </p>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {product.price}
-                      </span>
-                      <span className="text-sm text-gray-500 line-through">
-                        {product.originalPrice}
-                      </span>
-                    </div>
-                    
-                    <button className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-xl font-medium hover:scale-105 transform transition-all duration-300 shadow-lg hover:shadow-xl text-sm">
-                      Add to Cart
-                    </button>
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <Link
-                      href={`/products/${product.id}`}
-                      className="inline-flex items-center text-sm text-green-600 dark:text-green-400 font-medium hover:text-green-700 dark:hover:text-green-300 transition-colors duration-200"
-                    >
-                      View Details
-                      <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                      </svg>
-                    </Link>
+              </div>
+            )}
+            
+            {/* Error State */}
+            {productsError && (
+              <div className="flex justify-center items-center py-12">
+                <div className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-6 py-4 rounded-lg border border-red-200 dark:border-red-800">
+                  <div className="flex items-center gap-2">
+                    <span>❌</span>
+                    <span>Failed to load products: {productsError}</span>
                   </div>
                 </div>
               </div>
-            ))}
+            )}
+            
+            {/* Products Grid */}
+            {!productsLoading && !productsError && products.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                {products.map((product, index) => (
+                  <div
+                    key={product.id}
+                    ref={el => productsRef.current[index] = el}
+                    className="group bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-200 dark:border-gray-700 cursor-pointer transform-gpu"
+                  >
+                    {/* Product Image */}
+                    <div className="relative h-48 sm:h-56 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 overflow-hidden">
+                      {product.image ? (
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-6xl sm:text-7xl opacity-20">
+                          📦
+                        </div>
+                      )}
+                      <div className="absolute top-4 left-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-medium">
+                        {product.featured ? 'FEATURED' : 'NEW'}
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-green-400 to-blue-400"></div>
+                    </div>
+
+                    {/* Product Content */}
+                    <div className="p-6">
+                      <div className="mb-3">
+                        <span className="inline-block bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-lg text-xs font-medium">
+                          {getCategoryName(product.category)}
+                        </span>
+                      </div>
+                      
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-300">
+                        {product.name}
+                      </h3>
+                      
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
+                        {product.description}
+                      </p>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                            ${product.price}
+                          </span>
+                        </div>
+                        
+                        <button className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-xl font-medium hover:scale-105 transform transition-all duration-300 shadow-lg hover:shadow-xl text-sm">
+                          Add to Cart
+                        </button>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <Link
+                          href={`/products/${product.slug}`}
+                          className="inline-flex items-center text-sm text-green-600 dark:text-green-400 font-medium hover:text-green-700 dark:hover:text-green-300 transition-colors duration-200"
+                        >
+                          View Details
+                          <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Empty State */}
+            {!productsLoading && !productsError && products.length === 0 && (
+              <div className="flex justify-center items-center py-12">
+                <div className="text-center">
+                  <div className="text-6xl mb-4 opacity-50">📦</div>
+                  <p className="text-gray-600 dark:text-gray-400">No products available at the moment</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Call to Action */}
