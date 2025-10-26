@@ -101,6 +101,7 @@ export const auth = {
     console.log('Auth: Triggering logout events...')
     window.dispatchEvent(new Event('storage'))
     window.dispatchEvent(new Event('authStateChanged'))
+    window.dispatchEvent(new Event('userLoggedOut'))
     
     // Small delay to ensure events are processed
     setTimeout(() => {

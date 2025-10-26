@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
 import Link from 'next/link'
+import { HeartIcon as HeartOutlineIcon, ShoppingCartIcon } from '@heroicons/react/24/outline'
+import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
@@ -28,6 +30,12 @@ export default function ProductsContent() {
 
   // State for image loading
   const [imageLoadingStates, setImageLoadingStates] = useState({})
+  
+  // State for cart and wishlist
+  const [cartCode, setCartCode] = useState(null)
+  const [addingToCart, setAddingToCart] = useState({})
+  const [wishlistItems, setWishlistItems] = useState(new Set())
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -80,6 +88,39 @@ export default function ProductsContent() {
 
     return () => ctx.revert()
   }, [])
+  
+  // Initialize cart code and check authentication
+  useEffect(() => {
+    let code = localStorage.getItem('cart_code')
+    if (!code) {
+      code = 'CART_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+      localStorage.setItem('cart_code', code)
+    }
+    setCartCode(code)
+    
+    const token = localStorage.getItem('authToken')
+    setIsAuthenticated(!!token)
+  }, [])
+  
+  // Fetch wishlist if authenticated
+  useEffect(() => {
+    if (!isAuthenticated) return
+    
+    const fetchWishlist = async () => {
+      try {
+        const response = await fetch('/api/wishlist')
+        if (response.ok) {
+          const data = await response.json()
+          const wishlistProductIds = new Set(data.map(item => item.product.id))
+          setWishlistItems(wishlistProductIds)
+        }
+      } catch (error) {
+        console.error('Error fetching wishlist:', error)
+      }
+    }
+    
+    fetchWishlist()
+  }, [isAuthenticated])
 
   // Fetch categories from API
   useEffect(() => {
@@ -200,6 +241,99 @@ export default function ProductsContent() {
       ...prev,
       [productId]: true
     }))
+  }
+  
+  // Add to cart handler
+  const handleAddToCart = async (e, productId, productName) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!isAuthenticated) {
+      alert('Please sign in to add items to your cart')
+      return
+    }
+    
+    if (!cartCode) return
+    
+    setAddingToCart(prev => ({ ...prev, [productId]: true }))
+    
+    try {
+      const response = await fetch('/api/cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cart_code: cartCode,
+          product_id: productId,
+          quantity: 1
+        })
+      })
+      
+      if (response.ok) {
+        alert(`${productName} added to cart!`)
+        // Dispatch cart update event
+        window.dispatchEvent(new Event('cartUpdated'))
+      } else {
+        alert('Failed to add to cart')
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error)
+      alert('Failed to add to cart')
+    } finally {
+      setAddingToCart(prev => ({ ...prev, [productId]: false }))
+    }
+  }
+  
+  // Toggle wishlist handler
+  const handleToggleWishlist = async (e, productId) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!isAuthenticated) {
+      alert('Please sign in to add items to your wishlist')
+      return
+    }
+    
+    const isInWishlist = wishlistItems.has(productId)
+    const token = localStorage.getItem('authToken')
+    
+    try {
+      if (isInWishlist) {
+        // Remove from wishlist
+        const response = await fetch(`/api/wishlist/${productId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        if (response.ok) {
+          setWishlistItems(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(productId)
+            return newSet
+          })
+        }
+      } else {
+        // Add to wishlist
+        const response = await fetch('/api/wishlist', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ product_id: productId })
+        })
+        
+        if (response.ok) {
+          setWishlistItems(prev => new Set([...prev, productId]))
+        } else if (response.status === 401) {
+          alert('Your session has expired. Please log in again.')
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling wishlist:', error)
+      alert('Failed to update wishlist')
+    }
   }
 
   return (
@@ -357,14 +491,15 @@ export default function ProductsContent() {
           {!productsLoading && !productsError && products.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {products.map((product, index) => (
-                <div
+                <Link
                   key={product.id}
+                  href={`/products/${product.id}`}
                   ref={(el) => {
                     if (el && !productsRef.current.includes(el)) {
                       productsRef.current[index] = el
                     }
                   }}
-                  className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 border border-gray-100 dark:border-gray-700 group"
+                  className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 border border-gray-100 dark:border-gray-700 group block cursor-pointer"
                 >
                   <div className="relative overflow-hidden">
                     {product.image ? (
@@ -396,6 +531,25 @@ export default function ProductsContent() {
                     <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs">
                       {product.featured ? 'FEATURED' : 'NEW'}
                     </div>
+                    
+                    {/* Wishlist button */}
+                    <button
+                      onClick={(e) => handleToggleWishlist(e, product.id)}
+                      className="absolute top-2 left-2 p-2 bg-white/90 dark:bg-gray-800/90 rounded-full hover:bg-white dark:hover:bg-gray-800 transition-all duration-300 z-10"
+                    >
+                      {wishlistItems.has(product.id) ? (
+                        <HeartSolidIcon className="w-5 h-5 text-red-500" />
+                      ) : (
+                        <HeartOutlineIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                      )}
+                    </button>
+                    
+                    {/* Click overlay indicator */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 flex items-center justify-center">
+                      <div className="bg-white/90 dark:bg-gray-800/90 text-gray-900 dark:text-white px-4 py-2 rounded-full opacity-0 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all duration-300 font-medium">
+                        View Details
+                      </div>
+                    </div>
                   </div>
                   
                   <div className="p-6">
@@ -417,12 +571,17 @@ export default function ProductsContent() {
                       <span className="text-2xl font-bold text-green-600 dark:text-green-400">
                         ${product.price}
                       </span>
-                      <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full transition-colors duration-300 transform hover:scale-105">
-                        Add to Cart
+                      <button 
+                        onClick={(e) => handleAddToCart(e, product.id, product.name)}
+                        disabled={addingToCart[product.id]}
+                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full transition-colors duration-300 transform hover:scale-105 relative z-10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        <ShoppingCartIcon className="w-5 h-5" />
+                        {addingToCart[product.id] ? 'Adding...' : 'Add to Cart'}
                       </button>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}

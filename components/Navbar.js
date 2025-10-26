@@ -15,6 +15,8 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [showUserDropdown, setShowUserDropdown] = useState(false)
+  const [cartCount, setCartCount] = useState(0)
+
   const [isScrolled, setIsScrolled] = useState(false)
   
   // GSAP refs
@@ -77,6 +79,56 @@ export default function Navbar() {
     return () => {
       window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('authStateChanged', handleAuthChange)
+    }
+  }, [])
+  
+  // Fetch cart count
+  useEffect(() => {
+    const fetchCartCount = async () => {
+      try {
+        // Check if user is logged in first
+        const authToken = localStorage.getItem('authToken')
+        if (!authToken) {
+          setCartCount(0)
+          return
+        }
+        
+        const cartCode = localStorage.getItem('cart_code')
+        if (!cartCode) return
+        
+        const response = await fetch(`/api/cart?cart_code=${cartCode}`)
+        if (response.ok) {
+          const data = await response.json()
+          setCartCount(data.total_items || 0)
+        }
+      } catch (error) {
+        console.error('Error fetching cart count:', error)
+      }
+    }
+    
+    // Fetch initially
+    fetchCartCount()
+    
+    // Refresh cart count every 30 seconds
+    const interval = setInterval(fetchCartCount, 30000)
+    
+    // Listen for cart update events
+    const handleCartUpdate = () => {
+      fetchCartCount()
+    }
+    
+    // Listen for logout events
+    const handleLogout = () => {
+      setCartCount(0)
+    }
+    
+    window.addEventListener('cartUpdated', handleCartUpdate)
+    window.addEventListener('userLoggedOut', handleLogout)
+    
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('cartUpdated', handleCartUpdate)
+      window.removeEventListener('userLoggedOut', handleLogout)
     }
   }, [])
 
@@ -168,12 +220,12 @@ export default function Navbar() {
 
   // Navigation items
   const navItems = [
-    { name: 'Home', href: '/', icon: '🏠' },
-    { name: 'Products', href: '/products', icon: '🛍️' },
-    { name: 'Blog', href: '/blog', icon: '📝' },
-    { name: 'Tools', href: '/tools', icon: '🔧' },
-    { name: 'Finance Tools', href: '/finance-tools', icon: '💰' },
-    { name: 'About', href: '/about', icon: 'ℹ️' }
+    { name: 'Home', href: '/', icon: '' },
+    { name: 'Products', href: '/products', icon: '' },
+    { name: 'Blog', href: '/blog', icon: '' },
+    { name: 'Tools', href: '/tools', icon: '' },
+    { name: 'Finance Tools', href: '/finance-tools', icon: '' },
+    { name: 'About', href: '/about', icon: '' }
   ]
 
   const handleSearch = (e) => {
@@ -199,6 +251,19 @@ export default function Navbar() {
     }
   }
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Close dropdowns if clicking outside
+      if (!event.target.closest('.dropdown-container')) {
+        setShowUserDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-300 ${
       isScrolled 
@@ -222,30 +287,7 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Search Bar - Hidden on small screens, shown on medium+ */}
-          <div 
-            ref={searchRef}
-            className="hidden md:flex items-center flex-1 max-w-lg mx-4 lg:mx-8"
-          >
-            <form onSubmit={handleSearch} className="relative w-full">
-              <div className={`relative transition-all duration-200 ${isSearchFocused ? 'transform scale-105' : ''}`}>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setIsSearchFocused(false)}
-                  placeholder="Search products, tools, articles..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 /* dark:border-gray-600 */ rounded-full bg-gray-50 /* dark:bg-gray-800 */ text-gray-900 /* dark:text-white */ placeholder-gray-500 /* dark:placeholder-gray-400 */ focus:outline-none focus:ring-2 focus:ring-green-500 /* dark:focus:ring-green-400 */ focus:border-transparent transition-all duration-200"
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-              </div>
-            </form>
-          </div>
+
 
           {/* Desktop Navigation - Hidden on mobile/tablet, shown on large+ */}
           <div className="hidden lg:flex items-center space-x-1">
@@ -258,7 +300,7 @@ export default function Navbar() {
                   }
                 }}
                 href={item.href}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:bg-gray-100 /* dark:hover:bg-gray-800 */ ${
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:bg-gray-100 /* dark:hover:bg-gray-800 */ ${
                   pathname === item.href
                     ? 'text-green-600 /* dark:text-green-400 */ bg-green-50 /* dark:bg-green-900/20 */'
                     : 'text-gray-700 /* dark:text-gray-300 */ hover:text-gray-900 /* dark:hover:text-white */'
@@ -273,51 +315,83 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Right side controls */}
-          <div className="flex items-center space-x-1 sm:space-x-2">
-            {/* Dark mode toggle */}
-            <button
-              onClick={toggleDarkMode}
-              className="hidden p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
-              aria-label="Toggle dark mode"
+          {/* Right side controls - Permanent Search + Icons */}
+          <div className="flex items-center space-x-3">
+            {/* Permanent Search Bar */}
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (searchQuery.trim()) {
+                  router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+                  setSearchQuery('')
+                }
+              }} 
+              className="relative hidden md:block"
             >
-              {isDarkMode ? (
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search products..."
+                className="w-64 pl-10 pr-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white placeholder-white/70 focus:outline-none focus:bg-white/20 focus:border-white/40 transition-all duration-200"
+              />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-4 w-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-              ) : (
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
+              </div>
+            </form>
+
+            {/* Mobile Search Icon */}
+            <button
+              onClick={() => router.push('/search')}
+              className="md:hidden p-2 text-white hover:text-green-600 hover:bg-gray-100 rounded-full transition-all duration-200"
+              aria-label="Search"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+
+            {/* Favorites/Wishlist Icon */}
+            <button
+              onClick={() => router.push('/wishlist')}
+              className="p-2 text-white hover:text-green-600 hover:bg-gray-100 rounded-full transition-all duration-200 relative"
+              aria-label="Wishlist"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+
+            {/* Shopping Cart Icon */}
+            <button
+              onClick={() => router.push('/cart')}
+              className="p-2 text-white hover:text-green-600 hover:bg-gray-100 rounded-full transition-all duration-200 relative"
+              aria-label="Shopping cart"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l-2.5 5m10-5v8a2 2 0 01-2 2H9a2 2 0 01-2-2v-8m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+              </svg>
+              {/* Cart badge with dynamic count */}
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium shadow-lg">
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
               )}
             </button>
 
-            {/* Authentication - Hidden on small screens for mobile menu */}
+            {/* User Profile Icon */}
             {isLoggedIn ? (
-              <div className="relative hidden sm:block">
+              <div className="relative dropdown-container">
                 <button
                   onClick={() => setShowUserDropdown(!showUserDropdown)}
-                  className="flex items-center space-x-2 p-2 rounded-full bg-green-100 /* dark:bg-green-900 */ text-green-700 /* dark:text-green-300 */ hover:bg-green-200 /* dark:hover:bg-green-800 */ transition-colors duration-200"
-                  title={userData ? `${userData.first_name} ${userData.last_name}`.trim() || userData.username : 'User Menu'}
+                  className="p-2 text-white hover:text-green-600 hover:bg-gray-100 rounded-full transition-all duration-200"
+                  aria-label="User profile"
                 >
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-500 /* dark:bg-green-600 */ rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs sm:text-sm font-medium">
-                      {userData && userData.first_name 
-                        ? userData.first_name.charAt(0).toUpperCase()
-                        : userData && userData.username
-                        ? userData.username.charAt(0).toUpperCase()
-                        : 'U'
-                      }
-                    </span>
-                  </div>
-                  <span className="hidden lg:inline text-sm font-medium">
-                    {userData && userData.first_name 
-                      ? userData.first_name
-                      : userData && userData.username
-                      ? userData.username
-                      : 'Profile'
-                    }
-                  </span>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
                 </button>
 
                 {/* User dropdown */}
@@ -333,59 +407,72 @@ export default function Navbar() {
                     )}
                     <Link
                       href="/profile"
-                      className="block px-4 py-2 text-sm text-gray-700 /* dark:text-gray-300 */ hover:bg-gray-100 /* dark:hover:bg-gray-700 */ transition-colors duration-200"
+                      className="block px-4 py-2 text-sm text-white-700 /* dark:text-gray-300 */ hover:bg-gray-100 /* dark:hover:bg-gray-700 */ transition-colors duration-200"
                       onClick={() => setShowUserDropdown(false)}
                     >
-                      👤 Profile
+                      Profile
                     </Link>
                     <Link
                       href="/orders"
-                      className="block px-4 py-2 text-sm text-gray-700 /* dark:text-gray-300 */ hover:bg-gray-100 /* dark:hover:bg-gray-700 */ transition-colors duration-200"
+                      className="block px-4 py-2 text-sm text-white-700 /* dark:text-gray-300 */ hover:bg-gray-100 /* dark:hover:bg-gray-700 */ transition-colors duration-200"
                       onClick={() => setShowUserDropdown(false)}
                     >
-                      📦 Orders
+                      Orders
                     </Link>
                     <Link
                       href="/settings"
                       className="block px-4 py-2 text-sm text-gray-700 /* dark:text-gray-300 */ hover:bg-gray-100 /* dark:hover:bg-gray-700 */ transition-colors duration-200"
                       onClick={() => setShowUserDropdown(false)}
                     >
-                      ⚙️ Settings
+                      Settings
                     </Link>
                     <hr className="my-1 border-gray-200 /* dark:border-gray-700 */" />
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-sm text-red-600 /* dark:text-red-400 */ hover:bg-gray-100 /* dark:hover:bg-gray-700 */ transition-colors duration-200"
                     >
-                      🚪 Logout
+                      Logout
                     </button>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
-                <Link
-                  ref={(el) => {
-                    if (el && !buttonsRef.current.includes(el)) {
-                      buttonsRef.current[0] = el
-                    }
-                  }}
-                  href="/login"
-                  className="px-2 lg:px-4 py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
+              <div className="relative dropdown-container">
+                <button
+                  onClick={() => setShowUserDropdown(!showUserDropdown)}
+                  className="p-2 text-white hover:text-green-600 hover:bg-gray-100 rounded-full transition-all duration-200"
+                  aria-label="User menu"
                 >
-                  Log In
-                </Link>
-                <Link
-                  ref={(el) => {
-                    if (el && !buttonsRef.current.includes(el)) {
-                      buttonsRef.current[1] = el
-                    }
-                  }}
-                  href="/signup"
-                  className="px-2 lg:px-4 py-2 text-xs lg:text-sm font-medium text-white bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-800 rounded-md transition-colors duration-200 shadow-md hover:shadow-lg"
-                >
-                  Sign Up
-                </Link>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </button>
+
+                {/* User dropdown for non-logged in users */}
+                {showUserDropdown && (
+                  <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg py-2 z-50 border border-gray-100">
+                    <Link
+                      href="/login"
+                      className="flex items-center gap-3 px-4 py-3 text-sm text-blue-600 hover:bg-gray-50 transition-colors duration-200"
+                      onClick={() => setShowUserDropdown(false)}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                      </svg>
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/signup"
+                      className="flex items-center gap-3 px-4 py-3 text-sm text-green-600 hover:bg-gray-50 transition-colors duration-200"
+                      onClick={() => setShowUserDropdown(false)}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                      </svg>
+                      Sign Up
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 
@@ -459,14 +546,14 @@ export default function Navbar() {
                     className="block px-3 py-2 text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors duration-200"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    🚪 Log In
+                    Log In
                   </Link>
                   <Link
                     href="/signup"
                     className="block px-3 py-2 text-sm sm:text-base font-medium text-white bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-800 rounded-md transition-colors duration-200 text-center"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    📝 Sign Up
+                    Sign Up
                   </Link>
                 </div>
               )}
@@ -475,7 +562,7 @@ export default function Navbar() {
               {isLoggedIn && (
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
                   <div className="px-3 py-2 text-sm sm:text-base font-medium text-green-600 dark:text-green-400">
-                    👤 {userData ? `${userData.first_name} ${userData.last_name}`.trim() || userData.username : 'User Menu'}
+                    {userData ? `${userData.first_name} ${userData.last_name}`.trim() || userData.username : 'User Menu'}
                   </div>
                   {userData && (
                     <div className="px-3 py-1 text-xs text-gray-500 dark:text-gray-400">
@@ -487,21 +574,21 @@ export default function Navbar() {
                     className="block px-3 py-2 text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors duration-200"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    👤 Profile
+                    Profile
                   </Link>
                   <Link
                     href="/orders"
                     className="block px-3 py-2 text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors duration-200"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    📦 Orders
+                    Orders
                   </Link>
                   <Link
                     href="/settings"
                     className="block px-3 py-2 text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors duration-200"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    ⚙️ Settings
+                    Settings
                   </Link>
                   <button
                     onClick={async () => {
@@ -515,7 +602,7 @@ export default function Navbar() {
                     }}
                     className="block w-full text-left px-3 py-2 text-sm sm:text-base font-medium text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors duration-200"
                   >
-                    🚪 Logout
+                    Logout
                   </button>
                 </div>
               )}
