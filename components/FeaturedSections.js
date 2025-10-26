@@ -632,7 +632,7 @@ export default function FeaturedSections() {
 
                       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                         <Link
-                          href={`/products/${product.slug}`}
+                          href={`/products/${product.id}`}
                           className="inline-flex items-center text-sm text-green-600 dark:text-green-400 font-medium hover:text-green-700 dark:hover:text-green-300 transition-colors duration-200"
                         >
                           View Details
