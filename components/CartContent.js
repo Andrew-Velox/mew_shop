@@ -15,8 +15,8 @@ import {
 const getImageUrl = (imagePath) => {
   if (!imagePath) return 'https://via.placeholder.com/150'
   if (imagePath.startsWith('http')) return imagePath
-  // If it's a relative path, prepend the Django backend URL
-  const baseUrl = 'http://127.0.0.1:8000'
+  // Use production Django backend URL
+  const baseUrl = 'https://shopdrf-production.up.railway.app'
   return `${baseUrl}${imagePath}`
 }
 
